@@ -7,11 +7,15 @@ from AppKit import NSSegmentStyleRoundRect, NSRoundRectBezelStyle
 from mojo.extensions import getExtensionDefault, setExtensionDefault
 
 
-def dPoint(scale, p, s=6):
+def dPoint(scale, p, s=4):
     s = s * scale
     r = s / 2
     x, y = p
     rect(x - r, y - r, s, s)
+def offsetPoint(offset, point):
+    ox,oy = offset
+    x, y = point
+    return (ox+x, oy+y)
 
 
 class MirrorPane(object):
@@ -110,26 +114,31 @@ class MirrorPane(object):
     def initLocalsUI(self):
         self.txtXCallback(self.view.offsetX)
         self.txtYCallback(self.view.offsetY)
-        # self.colorFillEdit(self.view.colorFillCW)
-        # self.colorStrokeEdit(self.view.colorStroke)
-        # self.drawChBoxCallback(self.view.drawChBox)
+
 
     def intiCallbackRadios(self):
         self.mirroringType = "none"
 
     def drawAction(self, scale):
         def _drawGlyph():
+            stroke(*self.colorStroke)
             if self.drawNodes:
                 fill(*self.colorStroke)
-                stroke(None)
+                # stroke(None)
                 for c in self.glyph:
-                    for p in c.points:
-                        dPoint(scale, p.position)
+                    for p in c.bPoints:
+                        _p, p, p_ = (p.bcpIn, p.anchor, p.bcpOut)
+                        dPoint(scale, p)
+                        if _p != (0,0):
+                            _p = offsetPoint(p,_p)
+                            dPoint(scale, _p)
+                            line(_p, p)
+                        if p_ != (0,0):
+                            p_ = offsetPoint(p,p_)
+                            dPoint(scale, p_)
+                            line(p_, p)
 
-            strokeWidth(1 * scale)
-            if self.drawStroke:
-                stroke(*self.colorStroke)
-            else:
+            if not self.drawStroke:
                 stroke(None)
             if self.drawFill:
                 fill(*self.colorFill)
