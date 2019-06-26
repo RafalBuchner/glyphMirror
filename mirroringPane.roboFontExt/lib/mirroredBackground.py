@@ -12,6 +12,7 @@ def dPoint(scale, p, s=4):
     r = s / 2
     x, y = p
     rect(x - r, y - r, s, s)
+
 def offsetPoint(offset, point):
     ox,oy = offset
     x, y = point
