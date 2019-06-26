@@ -9,6 +9,8 @@ This can be helpful in cases such as:
 
 Obviously, geometric symmetry isn't always _optical_ symmetry, so this tool will be more or less useful depending on the type style you are designing.
 
-<img src="https://media.giphy.com/media/60rUZAj7OHOiCsbPJY/giphy.gif" width="64" height="64">
+---
 
 A project by [Rafał Buchner](http://rafalbuchner.com) and [Arrow Type](https://arrowtype.com).
+
+<img src="https://media.giphy.com/media/60rUZAj7OHOiCsbPJY/giphy.gif" width="128" height="128">
