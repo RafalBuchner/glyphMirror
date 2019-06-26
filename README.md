@@ -11,10 +11,10 @@ Obviously, geometric symmetry isn't always _optical_ symmetry, so this tool will
 
 ---
 
-<p text-align="center">
+<p align="center">
     A project by <a href=http://rafalbuchner.com">Rafał Buchner</a> and <a href="https://arrowtype.com">Arrow Type</a>.
 </p>
 
-<p text-align="center">
+<p align="center">
     <img src="https://media.giphy.com/media/60rUZAj7OHOiCsbPJY/giphy.gif" width="128" height="128">
 </p>
