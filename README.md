@@ -1,13 +1,15 @@
-# Mirror Glyph
+# Glyph Mirror
 
-Renders a mirrored glyph in the background, which updates as you edit your drawing, to make it a snap to achieve symmetry.
+A RoboFont extension that renders a mirrored glyph in the background which updates as you edit your drawing, to make it simple and quick to achieve symmetry.
 
 This can be helpful in cases such as:
 - Achieving vertical symmetry in a glyph like `C`.
 - Achieving horizontal symmetry in a glyph such as `arrowup`.
 - Achieve vertical and horizontal symmetry in a glyph like `O`.
 
-Obviously, geometric symmetry isn't always _optical_ symmetry, so this tool will be more or less useful depending on the type style you are designing.
+(Obviously, geometric symmetry isn't necessarily _optical_ symmetry, so use this tool judiciously.)
+
+Mirror Glyph lives in the RoboFont Inspector for easy access.
 
 ---
 
