@@ -13,9 +13,8 @@ def dPoint(scale, p, s=4):
     x, y = p
     rect(x - r, y - r, s, s)
 
-
 def offsetPoint(offset, point):
-    ox, oy = offset
+    ox,oy = offset
     x, y = point
     return (ox+x, oy+y)
 
@@ -35,8 +34,7 @@ class MirrorPane(object):
         self.mirroringType = "None"
         self.initUI()
         self.addObservers()
-        addObserver(self, "inspectorWindowWillShowDescriptions",
-                    "inspectorWindowWillShowDescriptions")
+        addObserver(self, "inspectorWindowWillShowDescriptions", "inspectorWindowWillShowDescriptions")
 
     def initUI(self):
         btnH = 20
@@ -48,47 +46,31 @@ class MirrorPane(object):
         self.view.drawChBox = CheckBox((x, y, -p, btnH), "Show mirrored glyph", callback=self.drawChBoxCallback,
                                        sizeStyle="small")
         y += btnH + p / 2
-        self.view.mirroringOptionsTxt = TextBox(
-            (x, y, -p, txtH), "Reflection", sizeStyle="small")
+        self.view.mirroringOptionsTxt = TextBox((x, y, -p, txtH), "Reflection", sizeStyle="small")
         y += txtH + p / 2
         self.view.mirroringOptions = SegmentedButton((x, y, -p, btnH), self.mirroringOptionsDict, sizeStyle="small",
                                                      callback=self.mirroringOptionsCallback)
-
         nsObj = self.view.mirroringOptions.getNSSegmentedButton()
         nsObj.setSegmentStyle_(NSSegmentStyleRoundRect)
         # self.view.mirroringOptions.set([0])
         y += p + btnH
-        self.view.showOptionsTxt = TextBox(
-            (x, y, -p, txtH), "Display", sizeStyle="small")
+        self.view.showOptionsTxt = TextBox((x, y, -p, txtH), "Display", sizeStyle="small")
         y += txtH + p / 2
-
-        print(self.showOptionsDict)
-
-        # CheckBox(posSize, title, callback=None, value=False, sizeStyle='regular')
-        # self.view.showOptions = SegmentedButton((x, y, -p, btnH), self.showOptionsDict, sizeStyle="small",
-        #                                         callback=self.showOptionsCallback, selectionStyle="any")
-        self.view.showOptions = CheckBox((x, y, -p, btnH), self.showOptions[0], sizeStyle="regular",
-                                         callback=self.showOptionsCallback, value="False")
-        # self.view.showOptions = CheckBox((x, y, -p, btnH), self.showOptions[1], sizeStyle="regular",
-        #                                  callback=self.showOptionsCallback, value="False")
-        # self.view.showOptions = CheckBox((x, y, -p, btnH), self.showOptions[2], sizeStyle="regular",
-        #                                  callback=self.showOptionsCallback, value="False")
-        # nsObj = self.view.showOptions.getNSSegmentedButton()
-        # nsObj.setSegmentStyle_(NSSegmentStyleRoundRect)
+        self.view.showOptions = SegmentedButton((x, y, -p, btnH), self.showOptionsDict, sizeStyle="small",
+                                                callback=self.showOptionsCallback, selectionStyle="any")
+        nsObj = self.view.showOptions.getNSSegmentedButton()
+        nsObj.setSegmentStyle_(NSSegmentStyleRoundRect)
         y += p + btnH
-        self.view.offsetTxt = TextBox(
-            (x, y, -p, txtH), "offset", sizeStyle="small")
+        self.view.offsetTxt = TextBox((x, y, -p, txtH), "offset", sizeStyle="small")
         y += txtH + p / 2
-        self.view.offsetLabel = TextBox(
-            (x, y+2, -p, txtH), "x : y", sizeStyle="small")
+        self.view.offsetLabel = TextBox((x, y+2, -p, txtH), "x : y", sizeStyle="small")
 
         self.view.offset = RBEditText((x + 40, y, 75, btnH), 0, sizeStyle="small", placeholder="x : y",
-                                      callback=self.txtCallback)
+                                       callback=self.txtCallback)
         y += btnH + p / 2
-        self.view.colorTxt = TextBox(
-            (x, y+2, -p, txtH), "color", sizeStyle="small")
+        self.view.colorTxt = TextBox((x, y+2, -p, txtH), "color", sizeStyle="small")
         self.view.colorCW = ColorWell((x + 40, y, 75, btnH),
-                                      callback=self.colorEdit, color=rgb2NSColor(self.color))
+                                          callback=self.colorEdit, color=rgb2NSColor(self.color))
         y += btnH + p
         self.view.exportToLayer = Button((x, y, -p, btnH), "Export to layer…", sizeStyle="small",
                                          callback=self.exportToLayerCallback)
@@ -99,7 +81,7 @@ class MirrorPane(object):
 
         self.initLocalsUI()
         self.initGlobalsUI()
-        self.loadGlyph(initialLoad=True)
+        self.loadGlyph(initalLoad=True)
 
     def determineMirroringOption(self):
         if self.mirroringType == "None":
@@ -136,12 +118,12 @@ class MirrorPane(object):
                     for p in c.bPoints:
                         _p, p, p_ = (p.bcpIn, p.anchor, p.bcpOut)
                         dPoint(scale, p)
-                        if _p != (0, 0):
-                            _p = offsetPoint(p, _p)
+                        if _p != (0,0):
+                            _p = offsetPoint(p,_p)
                             dPoint(scale, _p)
                             line(_p, p)
-                        if p_ != (0, 0):
-                            p_ = offsetPoint(p, p_)
+                        if p_ != (0,0):
+                            p_ = offsetPoint(p,p_)
                             dPoint(scale, p_)
                             line(p_, p)
 
@@ -164,19 +146,18 @@ class MirrorPane(object):
 
             _drawGlyph()
 
-    def loadGlyph(self, initialLoad=False):
-        if self.glyph is not None and not initialLoad:
+    def loadGlyph(self, initalLoad=False):
+        if self.glyph is not None and not initalLoad:
             if self.offset is not None:
                 offset = self.offset
-            else:
-                offset = (0, 0)
+            else: offset = (0, 0)
             localSettings = self.glyph.lib.get(self.localkey)
             if localSettings is None:
                 self.glyph.lib[self.localkey] = self.defaultLocal
             else:
                 # I will need to find another solution without exceptions:
                 self.glyph.lib[self.localkey] = dict(offset=offset,
-                                                     mirroringOptions=self.view.mirroringOptions.get())
+                                                         mirroringOptions=self.view.mirroringOptions.get())
                 # try:
                 #     self.glyph.lib[self.localkey] = dict(offset=offset,
                 #                                          mirroringOptions=self.view.mirroringOptions.get())
@@ -229,11 +210,13 @@ class MirrorPane(object):
         else:
             self.color = self.defaultGlobal['color']
 
+
     def initGlobalsUI(self):
         self.view.drawChBox.set(self.drawGlyph)
         self.view.colorCW.set(rgb2NSColor(self.color))
         self.drawChBoxCallback(self.view.drawChBox)
         self.colorEdit(self.view.colorCW)
+
 
     def initLocalsUI(self):
         self.view.showOptions.set(self.showOptions)
@@ -241,10 +224,9 @@ class MirrorPane(object):
         self.txtCallback(self.view.offset)
 
     # UI callbacks
-    def _layerBtnCallback(self, sender):
-        print("A")
-        print(sender.getTitle())
-
+    def _layerBtnCallback(self,sender):
+            print("A")
+            print(sender.getTitle())
     def exportToLayerCallback(self, sender):
         def _layerBtnCallback(sender):
             layersource = self.glyph.layer.name
@@ -256,12 +238,12 @@ class MirrorPane(object):
                 ox, oy = self.offset
                 origin = (x, y)
                 self.determineMirroringOption()
-                a, b, c, d, e, f = self.reflectionMatrix
+                a,b,c,d,e,f = self.reflectionMatrix
                 e += ox
                 f += oy
-                targetGlyph.transformBy((a, b, c, d, e, f), origin=origin)
+                targetGlyph.transformBy((a,b,c,d,e,f), origin=origin)
 
-        x, y, p = 5, 5, 5
+        x,y,p = 5,5,5
         btnH = 20
         height = y
         self.pop = Popover((0, 0))
@@ -270,13 +252,11 @@ class MirrorPane(object):
             setattr(self.pop, layer + "_cb", _layerBtnCallback)
             # cb = getattr(self.pop, layer + "_cb" )
             # print(cb)
-            obj = Button((x, y + (btnH+p)*i, -p, btnH), layer,
-                         sizeStyle="small", callback=_layerBtnCallback)
+            obj = Button((x, y + (btnH+p)*i, -p, btnH), layer, sizeStyle="small", callback=_layerBtnCallback)
             setattr(self.pop, layer + "_btn", obj)
-            height += y + btnH
+            height +=y + btnH
         self.pop.resize(140, height)
-        # , relativeRect=relativeRect)
-        self.pop.open(parentView=sender, preferredEdge='left')
+        self.pop.open(parentView=sender, preferredEdge='left')#, relativeRect=relativeRect)
 
     def colorEdit(self, sender):
         color = sender.get()
@@ -286,29 +266,29 @@ class MirrorPane(object):
             self.color = nsColor2RGB(sender.get())
         UpdateCurrentGlyphView()
 
+
+
     def txtCallback(self, sender):
         self.offset = sender.get()
         UpdateCurrentGlyphView()
 
     def showOptionsCallback(self, sender):
+        if len(sender.get()) == 0:
+            sender.set([0])
+        if 0 in sender.get():
+            self.drawFill = True
+        else:
+            self.drawFill = False
+        if 1 in sender.get():
+            self.drawNodes = True
+        else:
+            self.drawNodes = False
 
-        print(sender)
-        # if len(sender.get()) == 0:
-        #     sender.set([0])
-        # if 0 in sender.get():
-        #     self.drawFill = True
-        # else:
-        #     self.drawFill = False
-        # if 1 in sender.get():
-        #     self.drawNodes = True
-        # else:
-        #     self.drawNodes = False
-
-        # if 2 in sender.get():
-        #     self.drawStroke = True
-        # else:
-        #     self.drawStroke = False
-        # UpdateCurrentGlyphView()
+        if 2 in sender.get():
+            self.drawStroke = True
+        else:
+            self.drawStroke = False
+        UpdateCurrentGlyphView()
 
     def mirroringOptionsCallback(self, sender):
         self.mirroringType = self.mirroringOptions[sender.get()]
@@ -341,7 +321,7 @@ class MirrorPane(object):
         self.__drawingMeasurements = ((x_ - _x) / 2 + _x, (y_ - _y) / 2 + _y)
         return self.__drawingMeasurements
 
-    # stuff
+    ########## stuff
     def inspectorWindowWillShowDescriptions(self, notification):
         # create an inspector item
         item = dict(label="Glyph Mirror", view=self.view, size=self.height)
@@ -362,5 +342,6 @@ if test:
 
         def close(self, sender):
             self.pane.removeObservers()
+
 
     Win(mirrorPane)
