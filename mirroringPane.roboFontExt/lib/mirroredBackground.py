@@ -205,7 +205,7 @@ class MirrorPane(object):
     def saveSettings(self):
         glyphSettings = self.working_options
         settings = dict(
-            drawGlyph=self.view.drawChBox.get(),
+            # drawGlyph=self.view.drawChBox.get(),
             showOptions=self.view.showOptions.get(),
             colorFill=nsColor2RGB(self.view.colorFillCW.get()),
             colorStroke=nsColor2RGB(self.view.colorStroke.get()),
@@ -219,7 +219,8 @@ class MirrorPane(object):
             self.settings = self.defaultGlobal
         else:
             self.settings = getExtensionDefault(self.globalKey)
-        drawGlyph = self.settings.get("drawGlyph")
+        # drawGlyph = self.settings.get("drawGlyph")
+        drawGlyph = 0
         showOptions = self.settings.get("showOptions")
         colorFill = self.settings.get("colorFill")
         colorStroke = self.settings.get("colorStroke")
