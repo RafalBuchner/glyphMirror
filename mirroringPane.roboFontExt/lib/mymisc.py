@@ -2,55 +2,9 @@ from AppKit import NSColor, NSTextField, NSKeyDownMask, NSEvent, NSUpArrowFuncti
 from vanilla.vanillaBase import VanillaCallbackWrapper
 digits_dot_minus = "1234567890.-"
 from vanilla import EditText
-class RBVanillaEditTextDelegate(VanillaCallbackWrapper):
-
-    _continuous = True
-    # def initWithCallback_(self, callback):
-    #     self = self.init()
-    #     self.callback = callback
-    #     ###
-    #     self.monitor = NSEvent.addLocalMonitorForEventsMatchingMask_handler_(NSKeyDownMask, self.eventHandler)
-    #     ###
-    #     return self
-
-    def control_textView_doCommandBySelector_(self, control, textView, selector):
-        value = 1
-        print('selector',selector)
-        print()
-        print('control',control)
-        print('*********************')
-        if "Down" in selector in selector: value *= -1
-        if "AndModifySelection" in selector and ("Up" in selector or "Down" in selector): value *= 10
-        if "End" in selector or "Right" in selector or "Left" in selector or "Beggining" in selector or "deleteBackward" in selector: return False
-
-        strValue = textView.string()
-        strValue = strValue.replace(",",".")
-        # print(strValue)
-        for chr in strValue:
-            if chr not in digits_dot_minus:
-                return True
-        floatValue = float(strValue)
-        floatValue += value
-        floatValue = round(floatValue, 3)
-        if floatValue % 1 != 0:
-            strValue = floatValue
-        else:
-            strValue = int(floatValue)
-
-        textView.setString_(str(strValue))
-        self.action_(control)
-        return True
-
-    def controlTextDidChange_(self, notification):
-        if self._continuous:
-            self.action_(notification.object())
-
-    def controlTextDidEndEditing_(self, notification):
-        if not self._continuous:
-            self.action_(notification.object())
 
 class RBNSTextField(NSTextField):
-    def keyDown_(self, event):
+    def keyUp_(self, event):
         if event.characters() == NSUpArrowFunctionKey or event.characters() == NSDownArrowFunctionKey:
             shiftDown = NSEvent.modifierFlags() & NSShiftKeyMask
             commandDown = NSEvent.modifierFlags() & NSCommandKeyMask
@@ -80,8 +34,6 @@ class RBNSTextField(NSTextField):
 
 class RBEditText(EditText):
     nsTextFieldClass = RBNSTextField
-    # nsTextFieldDelegateClass = RBVanillaEditTextDelegate
-
 
 def rgb2NSColor(rgb):
     if rgb is None:
