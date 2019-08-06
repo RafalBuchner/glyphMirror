@@ -1,11 +1,18 @@
-from vanilla import *
 from mymisc import *
+from vanilla import *
 from mojo.events import addObserver, removeObserver
 from mojo.UI import UpdateCurrentGlyphView
 from mojo.drawingTools import *
 from AppKit import NSSegmentStyleRoundRect, NSRoundRectBezelStyle
 from mojo.extensions import getExtensionDefault, setExtensionDefault
+from copy import deepcopy
 
+def isfloat(value):
+  try:
+    float(value)
+    return True
+  except ValueError:
+    return False
 
 def dPoint(scale, p, s=4):
     s = s * scale
@@ -22,75 +29,87 @@ def offsetPoint(offset, point):
 class MirrorPane(object):
     globalKey = "com.rafalbuchner.mirroringDrawingGlobal"
     localkey = "com.rafalbuchner.mirroringDrawingLocal"
-    mirroringOptions = ["None", "Horizontal", "Vertical", "Both"]
+    mirroringOptions = ["none", "hor", "ver", "both"]
     mirroringOptionsDict = [dict(title=option) for option in mirroringOptions]
-    showOptions = ["Fill", "Nodes", "Stroke"]
+    showOptions = ["fill", "nodes", "stroke"]
     showOptionsDict = [dict(title=option) for option in showOptions]
-    defaultGlobal = dict(drawGlyph=1, showOptions=[0], color=(0, 0, 1, .45))
+    defaultGlobal = dict(drawGlyph=1, showOptions=[0], colorFill=(0, 0, 1, .45), colorStroke=(0, 0, 1, .45))
     defaultLocal = dict(mirroringOptions=3, offset=(0, 0))
 
     def __init__(self):
         self.glyph = CurrentGlyph()
-        self.mirroringType = "None"
+        self.working_options = self.defaultLocal
         self.initUI()
         self.addObservers()
         addObserver(self, "inspectorWindowWillShowDescriptions", "inspectorWindowWillShowDescriptions")
 
     def initUI(self):
         btnH = 20
-        txtH = 17
+        txtH = 15
         x, y, p = 10, 10, 10
 
         self.loadSettings()
         self.view = Group((0, 0, -0, -0))
-        self.view.drawChBox = CheckBox((x, y, -p, btnH), "Show mirrored glyph", callback=self.drawChBoxCallback,
-                                       sizeStyle="small")
+        self.view.drawChBox = CheckBox((x, y, -p, btnH), "draw mirrored glyph", callback=self.drawChBoxCallback,
+                                       sizeStyle="mini")
         y += btnH + p / 2
-        self.view.mirroringOptionsTxt = TextBox((x, y, -p, txtH), "Reflection", sizeStyle="small")
+        self.view.mirroringOptionsTxt = TextBox((x, y, -p, txtH), "mirroring options", sizeStyle="small")
         y += txtH + p / 2
-        self.view.mirroringOptions = SegmentedButton((x, y, -p, btnH), self.mirroringOptionsDict, sizeStyle="small",
+        self.view.mirroringOptions = SegmentedButton((x, y, -p, btnH), self.mirroringOptionsDict, sizeStyle="mini",
                                                      callback=self.mirroringOptionsCallback)
         nsObj = self.view.mirroringOptions.getNSSegmentedButton()
         nsObj.setSegmentStyle_(NSSegmentStyleRoundRect)
-        # self.view.mirroringOptions.set([0])
+        self.view.mirroringOptions.set([0])
         y += p + btnH
-        self.view.showOptionsTxt = TextBox((x, y, -p, txtH), "Display", sizeStyle="small")
+        self.view.showOptionsTxt = TextBox((x, y, -p, txtH), "show", sizeStyle="small")
         y += txtH + p / 2
-        self.view.showOptions = SegmentedButton((x, y, -p, btnH), self.showOptionsDict, sizeStyle="small",
+        self.view.showOptions = SegmentedButton((x, y, -p, btnH), self.showOptionsDict, sizeStyle="mini",
                                                 callback=self.showOptionsCallback, selectionStyle="any")
         nsObj = self.view.showOptions.getNSSegmentedButton()
         nsObj.setSegmentStyle_(NSSegmentStyleRoundRect)
         y += p + btnH
         self.view.offsetTxt = TextBox((x, y, -p, txtH), "offset", sizeStyle="small")
         y += txtH + p / 2
-        self.view.offsetLabel = TextBox((x, y+2, -p, txtH), "x : y", sizeStyle="small")
-
-        self.view.offset = RBEditText((x + 40, y, 75, btnH), 0, sizeStyle="small", placeholder="x : y",
-                                       callback=self.txtCallback)
+        self.view.offsetX = RBEditText((x, y, 50, txtH), 0, sizeStyle="mini", placeholder="x value",
+                                       callback=self.txtXCallback)
+        self.view.offsetY = RBEditText((x + 50, y, 50, txtH), 0, sizeStyle="mini", placeholder="y value",
+                                       callback=self.txtYCallback)
         y += btnH + p / 2
-        self.view.colorTxt = TextBox((x, y+2, -p, txtH), "color", sizeStyle="small")
-        self.view.colorCW = ColorWell((x + 40, y, 75, btnH),
-                                          callback=self.colorEdit, color=rgb2NSColor(self.color))
-        y += btnH + p
-        self.view.exportToLayer = Button((x, y, -p, btnH), "Export to layer…", sizeStyle="small",
+        self.view.fillTxt = TextBox((x, y, -p, txtH), "fill", sizeStyle="small")
+        self.view.colorFillCW = ColorWell((x + 50, y, 50, txtH),
+                                          callback=self.colorFillEdit, color=rgb2NSColor(self.colorFill))
+        self.view.generateBasedOnFillChBox = CheckBox((x+p*11,y,-p,txtH), 'Generate stroke from fill', sizeStyle="mini", callback=self.generateStrokeColorBasedOnFillCallBack)
+        y += txtH + p / 2
+        self.view.strokeTxt = TextBox((x, y, -p, txtH), "stroke", sizeStyle="small")
+        self.view.colorStroke = ColorWell((x + 50, y, 50, txtH),
+                                          callback=self.colorStrokeEdit, color=rgb2NSColor(self.colorStroke))
+        y += txtH + p
+        self.view.exportToLayer = Button((x, y, -p, btnH), "export to layer", sizeStyle="mini",
                                          callback=self.exportToLayerCallback)
         nsObj = self.view.exportToLayer.getNSButton()
+        nsObj.setBezelStyle_(NSRoundRectBezelStyle)
+        y += btnH + p
+        self.view.saveSettingsForCurrentGlyph = Button((x, y, -p, btnH), "Save Mirror for the Current…", sizeStyle="small",
+                                         callback=self.saveSettingsForCurrentGlyphCallback)
+        nsObj = self.view.saveSettingsForCurrentGlyph.getNSButton()
         nsObj.setBezelStyle_(NSRoundRectBezelStyle)
         y += btnH + p
         self.height = y
 
         self.initLocalsUI()
         self.initGlobalsUI()
-        self.loadGlyph(initalLoad=True)
+        self.loadGlyph()
+        self.intiCallbackRadios()
 
     def determineMirroringOption(self):
-        if self.mirroringType == "None":
+        self.mirroringType = self.mirroringOptions[self.working_options['mirroringOptions']]
+        if self.mirroringType == "none":
             self.reflectionMatrix = [1, 0, 0, 1, 0, 0]
-        if self.mirroringType == "Both":
+        if self.mirroringType == "both":
             self.reflectionMatrix = [-1, 0, 0, -1, 0, 0]
-        if self.mirroringType == "Vertical":
+        if self.mirroringType == "ver":
             self.reflectionMatrix = [1, 0, 0, -1, 0, 0]
-        if self.mirroringType == "Horizontal":
+        if self.mirroringType == "hor":
             self.reflectionMatrix = [-1, 0, 0, 1, 0, 0]
         # else:
         #     self.reflectionMatrix = [1,0,0,1,0,0]
@@ -108,11 +127,24 @@ class MirrorPane(object):
         removeObserver(self, "glyphWindowDidOpen")
         removeObserver(self, "drawBackground")
 
+    def initLocalsUI(self):
+        self.txtXCallback(self.view.offsetX)
+        self.txtYCallback(self.view.offsetY)
+
+
+    def intiCallbackRadios(self):
+        self.mirroringType = "none"
+
     def drawAction(self, scale):
         def _drawGlyph():
-            stroke(*self.color)
+            if self.generateStrokeColorBasedOnFill == 1:
+                r,g,b,a = nsColor2RGB(self.view.colorFillCW.get())
+                colorStroke = (r,g,b,a*.3)
+            else:
+                colorStroke = self.colorStroke
+            stroke(*colorStroke)
             if self.drawNodes:
-                fill(*self.color)
+                fill(*colorStroke)
                 # stroke(None)
                 for c in self.glyph:
                     for p in c.bPoints:
@@ -130,62 +162,55 @@ class MirrorPane(object):
             if not self.drawStroke:
                 stroke(None)
             if self.drawFill:
-                fill(*self.color)
+                fill(*self.colorFill)
             else:
                 fill(None)
             drawGlyph(self.glyph)
 
-        if self.offset is not None:
-            x, y = self.drawingMeasurements
-            ox, oy = self.offset
-            translate(x + ox, y + oy)
-            self.determineMirroringOption()
+        x, y = self.drawingMeasurements
+        self.offsetX, self.offsetY = self.working_options['offset']
+        translate(x + self.offsetX, y + self.offsetY)
+        self.determineMirroringOption()
 
-            transform(self.reflectionMatrix)
-            translate(-x, -y)
+        transform(self.reflectionMatrix)
+        translate(-x, -y)
 
-            _drawGlyph()
+        _drawGlyph()
 
-    def loadGlyph(self, initalLoad=False):
-        if self.glyph is not None and not initalLoad:
-            if self.offset is not None:
-                offset = self.offset
-            else: offset = (0, 0)
-            localSettings = self.glyph.lib.get(self.localkey)
-            if localSettings is None:
-                self.glyph.lib[self.localkey] = self.defaultLocal
-            else:
-                # I will need to find another solution without exceptions:
-                self.glyph.lib[self.localkey] = dict(offset=offset,
-                                                         mirroringOptions=self.view.mirroringOptions.get())
-                # try:
-                #     self.glyph.lib[self.localkey] = dict(offset=offset,
-                #                                          mirroringOptions=self.view.mirroringOptions.get())
-                # except:
-                #     self.glyph.lib[self.localkey] = dict(offset=offset, mirroringOptions=[3])
-
+    def loadGlyph(self):
         self.glyph = CurrentGlyph()
 
         if self.glyph is not None:
-            if self.localkey in self.glyph.lib:
-                localSettings = self.glyph.lib[self.localkey]
-            else:
-                localSettings = self.defaultLocal
+            self.working_options = self.glyph.lib.get(self.localkey)
+            if self.glyph.lib.get(self.localkey) is None:
+                globalSettings = self.glyph.font.lib.get(self.globalKey)
+                if globalSettings is not None:
+                    globalGlyphSettings = globalSettings.get('glyphSettings', self.defaultLocal)
+                else:
+                    globalGlyphSettings = self.defaultLocal
+                self.working_options = globalGlyphSettings
 
-            offset = localSettings.get("offset")
-            mirroringOptions = localSettings.get("mirroringOptions")
-            if mirroringOptions is not None:
-                self.view.mirroringOptions.set(mirroringOptions)
-                self.mirroringOptionsCallback(self.view.mirroringOptions)
-            if offset is not None:
-                self.view.offset.set(offset)
-                self.txtCallback(self.view.offset)
+            offsetX, offsetY = self.working_options['offset']
+            mirroringOptions = self.working_options['mirroringOptions']
+            self.view.offsetX.set(offsetX)
+            self.view.offsetY.set(offsetY)
+            self.view.mirroringOptions.set(mirroringOptions)
+
+    def saveCurrentGlyphSettingsAsGlobal(self):
+        glyphSettings = self.working_options
+        settings = getExtensionDefault(self.globalKey)
+        settings['glyphSettings'] = glyphSettings
+        setExtensionDefault(self.globalKey, settings)
 
     def saveSettings(self):
+        glyphSettings = self.working_options
         settings = dict(
             drawGlyph=self.view.drawChBox.get(),
             showOptions=self.view.showOptions.get(),
-            color=nsColor2RGB(self.view.colorCW.get()),
+            colorFill=nsColor2RGB(self.view.colorFillCW.get()),
+            colorStroke=nsColor2RGB(self.view.colorStroke.get()),
+            glyphSettings=glyphSettings,
+            generateStrokeColorBasedOnFill=self.generateStrokeColorBasedOnFill
         )
         setExtensionDefault(self.globalKey, settings)
 
@@ -196,7 +221,9 @@ class MirrorPane(object):
             self.settings = getExtensionDefault(self.globalKey)
         drawGlyph = self.settings.get("drawGlyph")
         showOptions = self.settings.get("showOptions")
-        color = self.settings.get("color")
+        colorFill = self.settings.get("colorFill")
+        colorStroke = self.settings.get("colorStroke")
+        self.generateStrokeColorBasedOnFill = self.settings.get("generateStrokeColorBasedOnFill", 0)
         if drawGlyph is not None:
             self.drawGlyph = drawGlyph
         else:
@@ -205,28 +232,40 @@ class MirrorPane(object):
             self.showOptions = showOptions
         else:
             self.showOptions = self.defaultGlobal['showOptions']
-        if color is not None:
-            self.color = color
+        if colorFill is not None:
+            self.colorFill = colorFill
         else:
-            self.color = self.defaultGlobal['color']
-
+            self.colorFill = self.defaultGlobal['colorFill']
+        if colorStroke is not None:
+            self.colorStroke = colorStroke
+        else:
+            self.colorStroke = self.defaultGlobal['colorStroke']
 
     def initGlobalsUI(self):
         self.view.drawChBox.set(self.drawGlyph)
-        self.view.colorCW.set(rgb2NSColor(self.color))
-        self.drawChBoxCallback(self.view.drawChBox)
-        self.colorEdit(self.view.colorCW)
-
-
-    def initLocalsUI(self):
         self.view.showOptions.set(self.showOptions)
+        self.view.colorFillCW.set(rgb2NSColor(self.colorFill))
+        self.view.colorStroke.set(rgb2NSColor(self.colorStroke))
+        self.colorFillEdit(self.view.colorFillCW)
+        self.colorStrokeEdit(self.view.colorStroke)
+        self.drawChBoxCallback(self.view.drawChBox)
         self.showOptionsCallback(self.view.showOptions)
-        self.txtCallback(self.view.offset)
+        self.showOptionsCallback(self.view.showOptions)
+        self.generateStrokeColorBasedOnFillCallBack(self.view.generateBasedOnFillChBox)
 
     # UI callbacks
-    def _layerBtnCallback(self,sender):
-            print("A")
-            print(sender.getTitle())
+    def generateStrokeColorBasedOnFillCallBack(self, sender):
+        if sender.get() == 1:
+            self.view.colorStroke.enable(False)
+            self.view.strokeTxt.enable(False)
+            self.generateStrokeColorBasedOnFill = 1
+
+        else:
+            self.view.colorStroke.enable(True)
+            self.view.strokeTxt.enable(True)
+            self.generateStrokeColorBasedOnFill = 0
+
+
     def exportToLayerCallback(self, sender):
         def _layerBtnCallback(sender):
             layersource = self.glyph.layer.name
@@ -250,26 +289,46 @@ class MirrorPane(object):
         self.pop.cb = self._layerBtnCallback
         for i, layer in enumerate(self.glyph.font.layerOrder):
             setattr(self.pop, layer + "_cb", _layerBtnCallback)
-            # cb = getattr(self.pop, layer + "_cb" )
-            # print(cb)
+
             obj = Button((x, y + (btnH+p)*i, -p, btnH), layer, sizeStyle="small", callback=_layerBtnCallback)
             setattr(self.pop, layer + "_btn", obj)
             height +=y + btnH
         self.pop.resize(140, height)
         self.pop.open(parentView=sender, preferredEdge='left')#, relativeRect=relativeRect)
 
-    def colorEdit(self, sender):
+    def saveSettingsForCurrentGlyphCallback(self, sender):
+        self.glyph.lib[self.localkey] = deepcopy(self.working_options)
+
+    def colorFillEdit(self, sender):
         color = sender.get()
         if isinstance(color, tuple):
-            self.color = sender.get()
+            self.colorFill = sender.get()
         else:
-            self.color = nsColor2RGB(sender.get())
+            self.colorFill = nsColor2RGB(sender.get())
         UpdateCurrentGlyphView()
 
+    def colorStrokeEdit(self, sender):
+        color = sender.get()
+        if isinstance(color, tuple):
+            self.colorStroke = sender.get()
+        else:
+            self.colorStroke = nsColor2RGB(sender.get())
+        UpdateCurrentGlyphView()
 
+    def txtXCallback(self, sender):
+        self.offsetX = 0
+        if sender.get() is not None:
+            if isfloat(sender.get()):
+                self.offsetX = float(sender.get())
+        # self.saveCurrentGlyphSettingsAsGlobal()
+        UpdateCurrentGlyphView()
 
-    def txtCallback(self, sender):
-        self.offset = sender.get()
+    def txtYCallback(self, sender):
+        self.offsetY = 0
+        if sender.get() is not None:
+            if isfloat(sender.get()):
+                self.offsetY = float(sender.get())
+        # self.saveCurrentGlyphSettingsAsGlobal()
         UpdateCurrentGlyphView()
 
     def showOptionsCallback(self, sender):
@@ -292,7 +351,6 @@ class MirrorPane(object):
 
     def mirroringOptionsCallback(self, sender):
         self.mirroringType = self.mirroringOptions[sender.get()]
-
         UpdateCurrentGlyphView()
 
     def drawChBoxCallback(self, sender):
@@ -316,6 +374,38 @@ class MirrorPane(object):
             restore()
 
     @property
+    def mirroringType(self):
+        return self.__mirroringType
+
+    @mirroringType.setter
+    def mirroringType(self, value):
+        self.__mirroringType = value
+        mirroringOptions = self.mirroringOptions.index(value)
+        self.working_options['mirroringOptions'] = mirroringOptions
+
+    @property
+    def offsetX(self):
+        return self.__offsetX
+
+    @offsetX.setter
+    def offsetX(self, value):
+        self.__offsetX = value
+        x,y = self.working_options.get('offset', (0,0))
+        offset = (value, y)
+        self.working_options['offset'] = offset
+    
+    @property
+    def offsetY(self):
+        return self.__offsetY
+
+    @offsetY.setter
+    def offsetY(self, value):
+        self.__offsetY = value
+        x,y = self.working_options.get('offset', (0,0))
+        offset = (x, value)
+        self.working_options['offset'] = offset
+
+    @property
     def drawingMeasurements(self):
         _x, _y, x_, y_ = self.glyph.bounds
         self.__drawingMeasurements = ((x_ - _x) / 2 + _x, (y_ - _y) / 2 + _y)
@@ -324,7 +414,7 @@ class MirrorPane(object):
     ########## stuff
     def inspectorWindowWillShowDescriptions(self, notification):
         # create an inspector item
-        item = dict(label="Glyph Mirror", view=self.view, size=self.height)
+        item = dict(label="Mirror Glyph", view=self.view, size=self.height)
         # insert or append the item to the list of inspector panes
 
         notification["descriptions"].insert(4, item)
