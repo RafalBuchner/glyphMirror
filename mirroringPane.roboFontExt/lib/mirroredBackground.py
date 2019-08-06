@@ -33,7 +33,7 @@ class MirrorPane(object):
     mirroringOptionsDict = [dict(title=option) for option in mirroringOptions]
     showOptions = ["fill", "nodes", "stroke"]
     showOptionsDict = [dict(title=option) for option in showOptions]
-    defaultGlobal = dict(drawGlyph=1, showOptions=[0], colorFill=(0, 0, 1, .45), colorStroke=(0, 0, 1, .45))
+    defaultGlobal = dict(drawGlyph=0, showOptions=[0], colorFill=(0, 0, 1, .45), colorStroke=(0, 0, 1, .45))
     defaultLocal = dict(mirroringOptions=3, offset=(0, 0))
 
     def __init__(self):
@@ -421,7 +421,7 @@ class MirrorPane(object):
 
 
 mirrorPane = MirrorPane()
-test = True
+test = False
 if test:
     class Win:
         def __init__(self, MirrorPane):
