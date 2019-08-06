@@ -89,7 +89,7 @@ class MirrorPane(object):
         nsObj = self.view.exportToLayer.getNSButton()
         nsObj.setBezelStyle_(NSRoundRectBezelStyle)
         y += btnH + p
-        self.view.saveSettingsForCurrentGlyph = Button((x, y, -p, btnH), "Save Mirror for the Current…", sizeStyle="small",
+        self.view.saveSettingsForCurrentGlyph = Button((x, y, -p, btnH), "Save settings for Glyph", sizeStyle="mini",
                                          callback=self.saveSettingsForCurrentGlyphCallback)
         nsObj = self.view.saveSettingsForCurrentGlyph.getNSButton()
         nsObj.setBezelStyle_(NSRoundRectBezelStyle)
@@ -421,7 +421,7 @@ class MirrorPane(object):
 
 
 mirrorPane = MirrorPane()
-test = False
+test = True
 if test:
     class Win:
         def __init__(self, MirrorPane):
